@@ -1,25 +1,13 @@
 const express = require('express');
-const mysql = require('mysql');
-const bodyParser = require('body-parser');
+const UserController = require('./Controller/UserController');
+const UserValidation = require('./Validation/UserValidation');
+const routes = require('./Routes/index');
 const app = express();
-
+const bodyParser = require('body-parser');
 app.use( bodyParser.json() );       // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
 }));
-
-const con = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "mysql@123",
-    database: "mynodedb",
-    port: "3306"
-});
-  
-con.connect(function(err) {
-    if (err) throw console.log('error = ',err);
-    console.log("Connected!");
-});
 
 const port = process.env.PORT || 5000;
 
@@ -28,41 +16,16 @@ app.get('/',(req, res)=>{
     res.render('base',{title:"my app"});
 });
 
-app.get('/user',(req, res)=>{
-    con.query('select * from users', function (error, results, fields) {
-        if (error) throw error;
-        res.end(JSON.stringify(results));
-      });
-});
+app.use('/api',routes);
 
-app.post('/user',(req, res)=>{
-    var params  = req.body;
-    console.log(params);
-    con.query('INSERT INTO users SET ?', params, function (error, results, fields) {
-	  if (error) throw error;
-	  res.end(JSON.stringify(results));
-	});
-});
+app.get('/user',UserController.index);
 
-app.get('/user/:id',(req, res)=>{
-    con.query('select * from users where id=?', [req.params.id], function (error, results, fields) {
-        if (error) throw error;
-        res.end(JSON.stringify(results));
-      });
-});
+app.post('/user',UserValidation.stote,UserController.store);
 
-app.put('/user/:id',(req, res)=>{
-    con.query('UPDATE `users` SET `name`=?,`phone`=?,`email`=?,`password`=? where `id`=?', [req.body.name,req.body.phone, req.body.email, req.body.password, req.body.id], function (error, results, fields) {
-        if (error) throw error;
-        res.end(JSON.stringify(results));
-    });
-});
+app.get('/user/:id',UserController.edit);
 
-app.delete('/user/:id',(req, res)=>{
-    con.query('DELETE FROM `users` WHERE `id`=?', [req.body.id], function (error, results, fields) {
-        if (error) throw error;
-        res.end('Record has been deleted!');
-      });
-});
+app.put('/user/:id',UserValidation.update,UserController.update);
+
+app.delete('/user/:id',UserController.delete);
 
 app.listen(port);
